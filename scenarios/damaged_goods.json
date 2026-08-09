@@ -1,0 +1,79 @@
+{
+  "id": "damaged_goods",
+  "case_id": "CS-1001",
+  "merchant_id": "M-8823",
+  "complaint": {
+    "submitted_at": "2026-08-08T10:30:00+08:00",
+    "contact": "王女士",
+    "text": "上周在你们店买了一个双层玻璃杯，今天收到打开一看杯口碎了一个角，完全没法用。请给我处理。"
+  },
+  "customer": {
+    "customer_id": "C-8823001",
+    "name": "王女士",
+    "phone": "138****5521",
+    "address": "杭州市西湖区文三路 128 号",
+    "member_since": "2025-03-12",
+    "after_sales_count": 0
+  },
+  "orders": [
+    {
+      "order_id": "SO-20260801-001",
+      "customer_id": "C-8823001",
+      "status": "已签收",
+      "created_at": "2026-08-01T20:15:00+08:00",
+      "shipped_at": "2026-08-02T10:00:00+08:00",
+      "signed_at": "2026-08-04T14:30:00+08:00",
+      "tracking_no": "SF-1188000001",
+      "fulfillment": "全部发货",
+      "items": [
+        {"product_id": "P-1001", "name": "双层玻璃杯 350ml", "quantity": 1, "unit_price": 199.0}
+      ]
+    }
+  ],
+  "payments": [
+    {"order_id": "SO-20260801-001", "paid_amount": 199.0, "payment_method": "微信支付", "paid_at": "2026-08-01T20:15:10+08:00"}
+  ],
+  "logistics": [
+    {
+      "order_id": "SO-20260801-001",
+      "tracking_no": "SF-1188000001",
+      "status": "已签收",
+      "nodes": [
+        {"time": "2026-08-02T10:00:00+08:00", "event": "已揽收"},
+        {"time": "2026-08-03T09:12:00+08:00", "event": "运输中"},
+        {"time": "2026-08-04T14:30:00+08:00", "event": "已签收"}
+      ]
+    }
+  ],
+  "inventory": [
+    {"product_id": "P-1001", "name": "双层玻璃杯 350ml", "available": 56}
+  ],
+  "evidence": [
+    {
+      "evidence_id": "EV-1001",
+      "type": "image",
+      "desc": "杯口破损照片",
+      "ref": "oss://merchant-8823/CS-1001/EV-1001.jpg",
+      "submitted_at": "2026-08-08T10:32:00+08:00"
+    }
+  ],
+  "policy": {
+    "category": "家居日用",
+    "rules": [
+      {"id": "POL-001", "title": "破损包赔", "content": "签收后 7 天内发现商品破损，可申请退款或补发，运费由商家承担。", "applicable_scenarios": ["damaged_goods"]},
+      {"id": "POL-002", "title": "7 天无理由退货", "content": "签收后 7 天内可无理由退货退款。", "applicable_scenarios": ["damaged_goods"]}
+    ]
+  },
+  "processing_rules": {
+    "amount_threshold": {"auto_refund_max": 100.0, "approval_min": 100.0},
+    "scenario_actions": {"damaged_goods": ["退款", "补发", "退货退款"]},
+    "risk_grading": "涉及资金动作一律 L2 审批后执行；单笔退款 ≥ 500 元为 L3 人工审核，只生成审批计划。"
+  },
+  "refund_history": [],
+  "expected": {
+    "intent": "退款或补发",
+    "max_refund": 199.0,
+    "risk_level": "L2",
+    "solution": "退款 199.00 元或补发双层玻璃杯"
+  }
+}

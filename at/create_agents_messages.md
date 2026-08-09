@@ -2,7 +2,7 @@
 
 AgentTeams 启动后，把下面这一整段消息复制到 `manager` 房间发送一次即可。消息内已经包含 4 个业务 Worker 和 1 个 Team 的完整定义；TeamLeader 由 manager 在创建 Team 时创建为独立 Worker。
 
-发送前请先按 [AGENTTEAMS_RUNBOOK.md](AGENTTEAMS_RUNBOOK.md) 确认 Worker 可访问的工具网关地址，然后把所有 `<MOCK_TOOL_BASE_URL>` 替换为该地址，例如：
+发送前请先按 [AGENTTEAMS_RUNBOOK.md](AGENTTEAMS_RUNBOOK.md) 确认 Worker 可访问的工具网关地址，然后把所有 `http://host.docker.internal:18089` 替换为该地址，例如：
 
 ```text
 http://172.18.0.1:18089
@@ -11,7 +11,7 @@ http://172.18.0.1:18089
 统一工具调用协议：
 
 ```text
-POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/{tool_domain}.{function_name}
+POST http://host.docker.internal:18089/tools/{scenario_id}/{tool_domain}.{function_name}
 Content-Type: application/json
 ```
 
@@ -32,10 +32,10 @@ Content-Type: application/json
 7. 必须等 4 个业务 Worker 全部创建完成并确认正常运行后，才允许创建 aftersales-zero-demo Team。
 8. Worker 初始化可能拉起容器运行时并写入依赖；并行创建会造成高 I/O 消耗，低规格机器可能因此阻塞，所以不要为了提速而并行执行。
 9. 4 个业务 Worker 的 AgentSpec、Skill、工具契约都在本消息中内联，不依赖 Worker 读取宿主机目录中的文件。
-10. 所有工具数据都通过 HTTP mock 工具网关获取，基础地址为 <MOCK_TOOL_BASE_URL>。
+10. 所有工具数据都通过 HTTP mock 工具网关获取，基础地址为 http://host.docker.internal:18089。
 
 统一工具调用协议：
-POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/{tool_domain}.{function_name}
+POST http://host.docker.internal:18089/tools/{scenario_id}/{tool_domain}.{function_name}
 Content-Type: application/json
 其中 {scenario_id} 由案件任务消息提供（例如 damaged_goods、missing_items），调用时替换为实际场景号。
 
@@ -65,11 +65,11 @@ skills:
 - intent-recognition: 判断投诉属于退款、补发、换货、维修还是投诉，提取商品和问题点。
 - case-organization: 绑定订单和商品，整理证据引用，输出标准案件并显式列出缺失信息。
 tool contracts:
-- aftersales.get_complaint: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/aftersales.get_complaint body {"case_id":"","merchant_id":""}
-- customer.get_profile: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/customer.get_profile body {"customer_id":""}
-- order.search: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/order.search body {"customer_id":"","keyword":""}
-- evidence.list_submissions: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/evidence.list_submissions body {"case_id":"","customer_id":""}
-- case.create: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/case.create body {"case_id":"","intent":"","order_id":"","products":[],"issue":"","evidence_refs":[],"missing_info":[]}
+- aftersales.get_complaint: POST http://host.docker.internal:18089/tools/{scenario_id}/aftersales.get_complaint body {"case_id":"","merchant_id":""}
+- customer.get_profile: POST http://host.docker.internal:18089/tools/{scenario_id}/customer.get_profile body {"customer_id":""}
+- order.search: POST http://host.docker.internal:18089/tools/{scenario_id}/order.search body {"customer_id":"","keyword":""}
+- evidence.list_submissions: POST http://host.docker.internal:18089/tools/{scenario_id}/evidence.list_submissions body {"case_id":"","customer_id":""}
+- case.create: POST http://host.docker.internal:18089/tools/{scenario_id}/case.create body {"case_id":"","intent":"","order_id":"","products":[],"issue":"","evidence_refs":[],"missing_info":[]}
 output contract:
 {
   "case_id": "CS-xxxx",
@@ -112,18 +112,18 @@ skills:
 - risk-grading: 按 L0~L3 分级，区分自动动作和审批动作，涉及资金一律 L2/L3。
 - report-writing: 汇总调查、方案、执行和验证结果输出最终售后报告，报告基于实际结果不得虚构。
 tool contracts:
-- order.get_detail: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/order.get_detail body {"order_id":""}
-- payment.get_detail: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/payment.get_detail body {"order_id":""}
-- logistics.get_track: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/logistics.get_track body {"order_id":""}
-- inventory.query_available: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/inventory.query_available body {"product_id":""}
-- evidence.verify: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/evidence.verify body {"case_id":"","evidence_refs":[]}
-- policy.query_after_sales: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/policy.query_after_sales body {"category":"","scenario":""}
-- refund.query_history: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/refund.query_history body {"order_id":"","customer_id":""}
-- aftersales.query_processing_rules: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/aftersales.query_processing_rules body {"scenario":""}
-- refund.calc_max_amount: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/refund.calc_max_amount body {"order_id":"","scenario":""}
-- order.check_reship_eligible: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/order.check_reship_eligible body {"order_id":"","product_id":""}
-- approval.create_task: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/approval.create_task body {"case_id":"","title":"","details":{}}
-- case.update: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/case.update body {"case_id":"","fields":{}}
+- order.get_detail: POST http://host.docker.internal:18089/tools/{scenario_id}/order.get_detail body {"order_id":""}
+- payment.get_detail: POST http://host.docker.internal:18089/tools/{scenario_id}/payment.get_detail body {"order_id":""}
+- logistics.get_track: POST http://host.docker.internal:18089/tools/{scenario_id}/logistics.get_track body {"order_id":""}
+- inventory.query_available: POST http://host.docker.internal:18089/tools/{scenario_id}/inventory.query_available body {"product_id":""}
+- evidence.verify: POST http://host.docker.internal:18089/tools/{scenario_id}/evidence.verify body {"case_id":"","evidence_refs":[]}
+- policy.query_after_sales: POST http://host.docker.internal:18089/tools/{scenario_id}/policy.query_after_sales body {"category":"","scenario":""}
+- refund.query_history: POST http://host.docker.internal:18089/tools/{scenario_id}/refund.query_history body {"order_id":"","customer_id":""}
+- aftersales.query_processing_rules: POST http://host.docker.internal:18089/tools/{scenario_id}/aftersales.query_processing_rules body {"scenario":""}
+- refund.calc_max_amount: POST http://host.docker.internal:18089/tools/{scenario_id}/refund.calc_max_amount body {"order_id":"","scenario":""}
+- order.check_reship_eligible: POST http://host.docker.internal:18089/tools/{scenario_id}/order.check_reship_eligible body {"order_id":"","product_id":""}
+- approval.create_task: POST http://host.docker.internal:18089/tools/{scenario_id}/approval.create_task body {"case_id":"","title":"","details":{}}
+- case.update: POST http://host.docker.internal:18089/tools/{scenario_id}/case.update body {"case_id":"","fields":{}}
 output contract:
 {
   "case_id": "CS-xxxx",
@@ -162,11 +162,11 @@ inputs:
 skills:
 - action-execution: 执行退款、补发、库存预留、通知等已允许动作，每个写操作携带幂等键，记录执行结果，失败即停。
 tool contracts:
-- approval.query_status: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/approval.query_status body {"case_id":"","task_id":""}
-- refund.submit: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/refund.submit body {"case_id":"","order_id":"","amount":0,"idempotency_key":""}
-- inventory.reserve: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/inventory.reserve body {"order_id":"","product_id":"","quantity":0,"idempotency_key":""}
-- order.create_reship: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/order.create_reship body {"order_id":"","product_id":"","idempotency_key":""}
-- message.notify_customer: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/message.notify_customer body {"case_id":"","channel":"","content":""}
+- approval.query_status: POST http://host.docker.internal:18089/tools/{scenario_id}/approval.query_status body {"case_id":"","task_id":""}
+- refund.submit: POST http://host.docker.internal:18089/tools/{scenario_id}/refund.submit body {"case_id":"","order_id":"","amount":0,"idempotency_key":""}
+- inventory.reserve: POST http://host.docker.internal:18089/tools/{scenario_id}/inventory.reserve body {"order_id":"","product_id":"","quantity":0,"idempotency_key":""}
+- order.create_reship: POST http://host.docker.internal:18089/tools/{scenario_id}/order.create_reship body {"order_id":"","product_id":"","idempotency_key":""}
+- message.notify_customer: POST http://host.docker.internal:18089/tools/{scenario_id}/message.notify_customer body {"case_id":"","channel":"","content":""}
 output contract:
 {
   "case_id": "CS-xxxx",
@@ -199,10 +199,10 @@ inputs:
 skills:
 - closure-verification: 查询退款状态和补发物流，逐项判定验证通过与否，全部通过才更新案件状态并关闭案件。
 tool contracts:
-- refund.query_status: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/refund.query_status body {"refund_id":""}
-- logistics.query_reship: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/logistics.query_reship body {"reship_id":""}
-- case.update_status: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/case.update_status body {"case_id":"","status":""}
-- case.close: POST <MOCK_TOOL_BASE_URL>/tools/{scenario_id}/case.close body {"case_id":"","note":""}
+- refund.query_status: POST http://host.docker.internal:18089/tools/{scenario_id}/refund.query_status body {"refund_id":""}
+- logistics.query_reship: POST http://host.docker.internal:18089/tools/{scenario_id}/logistics.query_reship body {"reship_id":""}
+- case.update_status: POST http://host.docker.internal:18089/tools/{scenario_id}/case.update_status body {"case_id":"","status":""}
+- case.close: POST http://host.docker.internal:18089/tools/{scenario_id}/case.close body {"case_id":"","note":""}
 output contract:
 {
   "case_id": "CS-xxxx",
@@ -236,7 +236,7 @@ Team 创建要求：
 - 使用 AgentTeams 当前配置的真实 LLM 完成推理和协作。
 - manager 只负责创建和管理；售后案件由 aftersales-zero-demo 对应的 Team 房间接收，用户需要在消息开头 @<team_leader_name>，该 mention 应指向 merchant-aftersales-leader。
 - 4 个业务 Worker 的 AgentSpec、Skill、工具契约都已在本消息中内联，不依赖 Worker 读取宿主机文件。
-- 所有工具数据通过 HTTP mock 工具网关获取，基础地址为 <MOCK_TOOL_BASE_URL>；{scenario_id} 由案件任务消息提供，调用时替换为实际场景号。
+- 所有工具数据通过 HTTP mock 工具网关获取，基础地址为 http://host.docker.internal:18089；{scenario_id} 由案件任务消息提供，调用时替换为实际场景号。
 - 收到售后案件后，由 TeamLeader 按以下流程调度业务 Worker：
   1. intake-investigator 将投诉翻译为结构化案件，输出诉求、商品、证据和缺失信息。
   2. resolution-reporter 调查订单、支付、物流、库存、证据和政策，输出调查报告、处理方案、风险等级和审批项。
