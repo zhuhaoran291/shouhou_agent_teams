@@ -1,0 +1,79 @@
+{
+  "transport": "http-mock-tool-gateway",
+  "base_url": "http://<TOOL_HOST_REACHABLE_BY_WORKER>:18089",
+  "call_pattern": "POST /tools/{scenario_id}/{tool_domain}.{function_name}",
+  "tools": [
+    {
+      "name": "aftersales",
+      "kind": "http-mock-adapter",
+      "functions": ["get_complaint", "query_processing_rules"],
+      "future_mcp_mapping": "aftersales.complaint_and_rules"
+    },
+    {
+      "name": "customer",
+      "kind": "http-mock-adapter",
+      "functions": ["get_profile"],
+      "future_mcp_mapping": "customer.profile"
+    },
+    {
+      "name": "order",
+      "kind": "http-mock-adapter",
+      "functions": ["search", "get_detail", "check_reship_eligible", "create_reship"],
+      "future_mcp_mapping": "order.query_and_fulfillment"
+    },
+    {
+      "name": "payment",
+      "kind": "http-mock-adapter",
+      "functions": ["get_detail"],
+      "future_mcp_mapping": "payment.query"
+    },
+    {
+      "name": "logistics",
+      "kind": "http-mock-adapter",
+      "functions": ["get_track", "query_reship"],
+      "future_mcp_mapping": "logistics.track"
+    },
+    {
+      "name": "inventory",
+      "kind": "http-mock-adapter",
+      "functions": ["query_available", "reserve"],
+      "future_mcp_mapping": "inventory.available_and_reserve"
+    },
+    {
+      "name": "evidence",
+      "kind": "http-mock-adapter",
+      "functions": ["list_submissions", "verify"],
+      "future_mcp_mapping": "evidence.list_and_verify"
+    },
+    {
+      "name": "policy",
+      "kind": "http-mock-adapter",
+      "functions": ["query_after_sales"],
+      "future_mcp_mapping": "policy.after_sales_query"
+    },
+    {
+      "name": "refund",
+      "kind": "http-mock-adapter",
+      "functions": ["query_history", "calc_max_amount", "submit", "query_status"],
+      "future_mcp_mapping": "refund.query_and_submit"
+    },
+    {
+      "name": "approval",
+      "kind": "http-mock-adapter",
+      "functions": ["create_task", "query_status"],
+      "future_mcp_mapping": "approval.create_and_query"
+    },
+    {
+      "name": "case",
+      "kind": "http-mock-adapter",
+      "functions": ["create", "update", "update_status", "close"],
+      "future_mcp_mapping": "case.create_and_update"
+    },
+    {
+      "name": "message",
+      "kind": "http-mock-adapter",
+      "functions": ["notify_customer"],
+      "future_mcp_mapping": "message.notify"
+    }
+  ]
+}

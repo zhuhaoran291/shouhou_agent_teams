@@ -1,0 +1,79 @@
+{
+  "team": {
+    "name": "aftersales-zero-demo",
+    "version": "0.1.0",
+    "description": "Minimal AgentTeams e-commerce after-sales demo for GOAI initial round.",
+    "primary_runtime": "agentteams-real-llm",
+    "worker_runtime": "qwenpow(copow/QwenPaw)",
+    "creation_policy": {
+      "mode": "serial",
+      "order": ["intake_investigator", "resolution_reporter", "executor", "verifier", "team"],
+      "rule": "Create the next business Worker only after the previous Worker is created and verified healthy. During Team creation, manager must create merchant-aftersales-leader as a dedicated TeamLeader Worker."
+    },
+    "team_leader": {
+      "id": "merchant_aftersales_leader",
+      "name": "merchant-aftersales-leader",
+      "creation": "created by manager during Team creation",
+      "rule": "Must be created as a new independent Worker and designated as TeamLeader. Do not designate any business Worker as leader."
+    },
+    "agent_spec_source": "inline messages in at/create_agents_messages.md",
+    "incident_task_source": "two separate after-sales case messages in at/run_demo_task_message.md",
+    "task_submission_policy": {
+      "room": "Matrix room whose name starts with Team and matches aftersales-zero-demo",
+      "mention": "@<team_leader_name>",
+      "rule": "Enter the Team room, mention the team leader, paste one case task into that mention message, and wait for the report before submitting the next case."
+    },
+    "tool_gateway": {
+      "transport": "http",
+      "base_url": "http://<TOOL_HOST_REACHABLE_BY_WORKER>:18089",
+      "call_pattern": "POST /tools/{scenario_id}/{tool_domain}.{function_name}"
+    }
+  },
+  "agents": [
+    {
+      "id": "intake_investigator",
+      "name": "Intake Investigator Agent",
+      "inline_spec_section": "at/create_agents_messages.md#复制到-manager-的完整创建请求",
+      "local_spec_file": "agents/intake-investigator/Agent.md",
+      "skills": ["intent-recognition", "case-organization"],
+      "tools": ["aftersales.get_complaint", "customer.get_profile", "order.search", "evidence.list_submissions", "case.create"]
+    },
+    {
+      "id": "resolution_reporter",
+      "name": "Resolution Reporter Agent",
+      "inline_spec_section": "at/create_agents_messages.md#复制到-manager-的完整创建请求",
+      "local_spec_file": "agents/resolution-reporter/Agent.md",
+      "skills": ["fact-investigation", "risk-identification", "solution-generation", "risk-grading", "report-writing"],
+      "tools": ["order.get_detail", "payment.get_detail", "logistics.get_track", "inventory.query_available", "evidence.verify", "policy.query_after_sales", "refund.query_history", "aftersales.query_processing_rules", "refund.calc_max_amount", "order.check_reship_eligible", "approval.create_task", "case.update"]
+    },
+    {
+      "id": "executor",
+      "name": "Executor Agent",
+      "inline_spec_section": "at/create_agents_messages.md#复制到-manager-的完整创建请求",
+      "local_spec_file": "agents/executor/Agent.md",
+      "skills": ["action-execution"],
+      "tools": ["approval.query_status", "refund.submit", "inventory.reserve", "order.create_reship", "message.notify_customer"]
+    },
+    {
+      "id": "verifier",
+      "name": "Verifier Agent",
+      "inline_spec_section": "at/create_agents_messages.md#复制到-manager-的完整创建请求",
+      "local_spec_file": "agents/verifier/Agent.md",
+      "skills": ["closure-verification"],
+      "tools": ["refund.query_status", "logistics.query_reship", "case.update_status", "case.close"]
+    }
+  ],
+  "workflow": [
+    {"step": 1, "agent": "merchant_aftersales_leader", "task": "receive_case_and_dispatch_workers"},
+    {"step": 2, "agent": "intake_investigator", "task": "translate_complaint_to_structured_case"},
+    {"step": 3, "agent": "resolution_reporter", "task": "investigate_facts_and_build_solution_with_approval"},
+    {"step": 4, "agent": "executor", "task": "execute_allowed_or_approved_actions"},
+    {"step": 5, "agent": "verifier", "task": "verify_results_and_close_case"},
+    {"step": 6, "agent": "resolution_reporter", "task": "complete_final_report_based_on_verification"},
+    {"step": 7, "agent": "merchant_aftersales_leader", "task": "compose_final_after_sales_report"}
+  ],
+  "risk_policy": {
+    "auto_execute": ["L0", "L1"],
+    "approval_only": ["L2", "L3"]
+  }
+}
