@@ -141,32 +141,31 @@ docker exec -it hiclaw-manager curl http://172.18.0.1:18089/health
 
 `host.docker.internal` 只在部分 Docker Desktop 环境可用。如果容器里报 `Could not resolve host: host.docker.internal`，就使用上面的 gateway 地址。
 
-## 5. 创建 Agent 和 Team
+## 5. 创建 Agent 和 Team（声明式，团队即代码）
 
-进入 Element Web 的 `manager` 房间。
+推荐用固定命令一次性构建 Team，结果可复现、可版本化。
 
-打开 [create_agents_messages.md](create_agents_messages.md)，先把文件中的 `<MOCK_TOOL_BASE_URL>` 全部替换为第 4 步确认的地址，例如：
+先确认第 4 步得到的工具网关地址（例如 `http://172.18.0.1:18089`），然后执行：
 
-```text
-http://172.18.0.1:18089
+```bash
+MOCK_TOOL_BASE_URL=http://172.18.0.1:18089 bash at/deploy.sh
 ```
 
-然后将 [create_agents_messages.md](create_agents_messages.md) 中“复制到 Manager 的完整创建请求”整段发送给 `manager`。这段请求已经包含 4 个业务 Worker 和 1 个 Team 的完整定义，并明确要求：
+`at/deploy.sh` 会：
 
-1. 所有 Worker 使用 `qwenpow`（`copow`/`QwenPaw`）运行时。
-2. `manager` 必须逐个创建 Worker，不能并行创建。
-3. 必须确认前一个 Worker 创建成功且正常运行后，再创建下一个 Worker。
-4. 创建 Team 时必须生成新的独立 Worker `merchant-aftersales-leader` 作为 TeamLeader，不能把 4 个业务 Worker 中的任何一个直接指定为 leader。
+1. 校验 `MOCK_TOOL_BASE_URL`（Worker 容器可访问的 mock 工具网关地址）。
+2. 把 `at/manifests/aftersales-zero.yaml` 模板中的 `$MOCK_TOOL_BASE_URL` / `$AT_MODEL` 渲染为实际值（模型默认取 `$AGENTTEAMS_DEFAULT_MODEL`，否则回退 `qwen-plus`）。
+3. 调用 `agt apply -f` 按文件顺序创建 4 个业务 Worker（intake-investigator / resolution-reporter / executor / verifier）、1 个独立 TeamLeader Worker `merchant-aftersales-leader` 和 `aftersales-zero-demo` Team。所有 Worker 使用 `qwenpow`（`copow`/`QwenPaw`）运行时。
 
-Worker 初始化会拉起运行时并写入依赖，低规格机器上并发创建可能造成高 I/O 消耗甚至阻塞。因此不要手动把 Worker 创建任务拆开并并行发送。
+`agt apply` 是幂等的：重复运行会创建或更新对应资源，因此想**定向修改某个 Agent 的能力**时，只需编辑 `at/manifests/aftersales-zero.yaml` 中该 Worker 的 `soul` 字段（mission / skills / 工具契约 / 边界），重新运行 `at/deploy.sh` 即可，无需重建其它 Worker。
 
 注意：
 
-- `manager` 只负责创建和管理。
-- 售后案件后续发给 Matrix 会话列表中名称以 `Team` 开头的 Team 房间，并在消息里 `@<team_leader_name>`，不发给 `manager`。
-- 4 个业务 Worker 的 AgentSpec、Skill 和工具契约已经内联在创建消息中。
-- Worker 不需要读取宿主机上的 `agents/...` 或 `skills/*/SKILL.md` 文件。
-- `skills/*/SKILL.md` 主要用于评审、PPT/文档追溯和后续 Registry 替换。
+- `manager` 只负责创建和管理；本步骤的声明式创建由 `agt` 直接对接 controller 完成，不再依赖把长消息粘贴进 `manager` 房间。
+- 售后案件后续发给 Matrix 会话列表中名称以 `Team` 开头的 Team 房间，并在消息里 `@merchant-aftersales-leader`，不发给 `manager`。
+- Worker 的 AgentSpec、Skill 和工具契约已内联在清单的 `soul` 字段中。
+- Worker 不需要读取宿主机上的 `agents/...` 或 `skills/*/SKILL.md` 文件；`skills/*/SKILL.md` 主要用于评审、PPT/文档追溯和后续 Registry 替换。
+
 
 ## 6. 发送售后案件
 
@@ -229,5 +228,5 @@ aftersales-zero-demo 对应的 Team 房间在哪里？请告诉我 Matrix 会话
 | --- | --- |
 | HTTP mock 工具网关 | 真实 MCP Server 或 Higress MCP 代理 |
 | `scenarios/*.json` | 真实订单、支付、物流、库存、证据、政策、退款、审批、案件、消息数据源 |
-| `at/create_agents_messages.md` 中 4 个业务 Worker 的内联 AgentSpec/Skill | Nacos AI Registry 中的 Prompt、Skill、AgentSpec、AgentTeam Spec |
+| `at/manifests/aftersales-zero.yaml` 中 4 个业务 Worker 的 soul（内联 AgentSpec/Skill） | Nacos AI Registry 中的 Prompt、Skill、AgentSpec、AgentTeam Spec |
 | `skills/*/SKILL.md` 评审材料 | 发布到 Nacos AI Registry 或 AgentTeams Skill Registry，由 Worker 按版本/标签动态加载 |

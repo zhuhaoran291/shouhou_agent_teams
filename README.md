@@ -22,7 +22,7 @@
 
 | Agent | 作用 | 关键 Skill | 工具域 |
 | --- | --- | --- | --- |
-| 售后总调度 `merchant-aftersales-leader` | 创建 Team 时由 manager 生成的独立 Worker，接收案件、调度 Worker、控制审批、汇总报告 | 由 manager 创建 | 无直接工具调用 |
+| 售后总调度 `merchant-aftersales-leader` | 清单中声明的独立 TeamLeader Worker，接收案件、调度 Worker、控制审批、汇总报告 | 声明于 `at/manifests/aftersales-zero.yaml` | 无直接工具调用 |
 | 受理 Agent `intake-investigator` | 将用户投诉翻译为结构化案件 | `intent-recognition`, `case-organization` | `aftersales`, `customer`, `order`, `evidence`, `case` |
 | 调查方案 Agent `resolution-reporter` | 调查事实 → 出方案 + 出报告（不执行） | `fact-investigation`, `risk-identification`, `solution-generation`, `risk-grading`, `report-writing` | `order`, `payment`, `logistics`, `inventory`, `evidence`, `policy`, `refund`, `aftersales`, `approval`, `case` |
 | 执行 Agent `executor` | 只执行已允许/已审批的动作（写操作集中地） | `action-execution` | `approval`, `refund`, `inventory`, `order`, `message` |
@@ -47,9 +47,16 @@ bash <(curl -sSL https://higress.ai/hiclaw/install.sh)
 
 3. 找到 Docker 容器访问工具网关的地址（详见运行手册第 4 节）。
 
-4. 在 Element Web 打开 `manager` 房间，把 [at/create_agents_messages.md](at/create_agents_messages.md) 里的 `<MOCK_TOOL_BASE_URL>` 替换成 Worker 可访问的网关地址后，将完整创建请求复制给 `manager`。创建请求已要求所有 Worker 使用 `qwenpow`（`copow`/`QwenPaw`）运行时，并由 `manager` 严格串行创建 4 个业务 Worker；创建 Team 时再生成独立 TeamLeader Worker `merchant-aftersales-leader`。
+4. 用声明式命令一次性构建 Team（团队即代码，可复现、可版本化）：
 
-5. 在 Element Web/Matrix 会话列表中找到名称以 `Team` 开头、对应 `aftersales-zero-demo` 的 Team 房间。进入房间后，在输入框先 `@<team_leader_name>` 选中带 leader 名字的成员，再把 [at/run_demo_task_message.md](at/run_demo_task_message.md) 中的第一条案件任务复制到这条 @ 消息里发送；等报告输出完成后，再用同样方式发送第二条。案件任务不要发给 `manager`。
+```bash
+# 先确认 Worker 容器可访问的工具网关地址（单机 Docker 通常用 manager 网络 gateway，如 http://172.18.0.1:18089）
+MOCK_TOOL_BASE_URL=<Worker_可访问的网关地址> bash at/deploy.sh
+```
+
+`at/deploy.sh` 会把 `at/manifests/aftersales-zero.yaml` 渲染为实际值，并调用 `agt apply -f` 创建 4 个业务 Worker（intake-investigator / resolution-reporter / executor / verifier）、1 个独立 TeamLeader Worker `merchant-aftersales-leader`，以及 `aftersales-zero-demo` Team。所有 Worker 使用 `qwenpow`（`copow`/`QwenPaw`）运行时。想定向修改某个 Agent 的能力，只需编辑对应 Worker 的 `soul` 字段后重新运行该脚本。
+
+5. 在 Element Web/Matrix 会话列表中找到名称以 `Team` 开头、对应 `aftersales-zero-demo` 的 Team 房间。进入房间后，在输入框先 `@merchant-aftersales-leader` 选中 leader，再把 [at/run_demo_task_message.md](at/run_demo_task_message.md) 中的第一条案件任务复制到这条 @ 消息里发送；等报告输出完成后，再用同样方式发送第二条。案件任务不要发给 `manager`。
 
 ## 工具域速查
 
@@ -76,5 +83,5 @@ bash <(curl -sSL https://higress.ai/hiclaw/install.sh)
 | --- | --- |
 | HTTP mock 工具网关 | 真实 MCP Server 或 Higress MCP 代理 |
 | `scenarios/*.json` | 真实订单、支付、物流、库存、证据、政策、退款、审批、案件、消息数据源 |
-| 4 个业务 Worker 的内联 AgentSpec/Skill | Nacos AI Registry 中的 Prompt、Skill、AgentSpec、AgentTeam Spec |
+| `at/manifests/aftersales-zero.yaml` 中 4 个业务 Worker 的 soul（AgentSpec/Skill/工具契约内联） | Nacos AI Registry 中的 Prompt、Skill、AgentSpec、AgentTeam Spec |
 | `skills/*/SKILL.md` 评审材料 | 发布到 Nacos AI Registry 或 AgentTeams Skill Registry，由 Worker 按版本/标签动态加载 |
